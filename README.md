@@ -1,8 +1,11 @@
 # Meta-analysis
 
-This repository contains R code for conducting a meta-analysis investigating the relationship between low parental socioeconomic position (SEP) and offspring's inflammation and cardiometabolic outcomes in later life. The meta-analysis covers 1) Cardiovascular function, 2) Glucose metabolism, 3) Lipid metabolism, 4) Adiposity, and 5) Inflammation.
+Project title: The intergenerational effects of low parental socioeconomic position (SEP) on offspring's inflammation and cardiometabolic outcomes in adulthood.
 
-This script to calculate power for a random-effects meta-analysis based on https://journals.sagepub.com/doi/abs/10.3102/1076998609346961 
+This repository contains R code for conducting a meta-analysis investigating the relationship between low parental socioeconomic position (SEP) and offspring's inflammation and cardiometabolic outcomes in later life using a systematic review and meta-analysis. Research question: Is low parental SEP affecting cardiometabolic and inflammatory dysregulation in adulthood?
+
+The meta-analysis covers biomarkers of 1) Cardiovascular function, 2) Glucose metabolism, 3) Lipid metabolism, 4) Adiposity, and 5) Inflammation.
+
 This reporsitory is organised as follows:
 
 -Data Processing: Scripts for data cleaning, formatting, and harmonization across studies included in the meta-analysis.
@@ -16,4 +19,7 @@ This reporsitory is organised as follows:
 -Meta-Regression Analysis: Notebooks for exploring how study characteristics (e.g., sample size, publication year) might moderate the observed relationships.
 
 -Visualization: Scripts to generate informative visualizations of the meta-analysis results (forest plots, subgroup analyses).
+
+References
+This script to calculate power for a random-effects meta-analysis was based on https://journals.sagepub.com/doi/abs/10.3102/1076998609346961 
 
