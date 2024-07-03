@@ -1,0 +1,561 @@
+---
+title: "meta_analysis parental SEP and cardiometabolic and inflammatory biomarkers"
+author: "Juan Carlos Rivillas"
+date: "02/02/2023"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+Meta package documentation in R
+#Install packages require to complete meta-analysis.
+```{r}
+install.packages("meta")
+install.packages("metafor")
+install.packages("gridGraphics")
+library(metadat)
+library(meta)
+library(metafor)
+library(readxl)
+
+library(meta)
+library(vcd)
+library(gridGraphics)
+library(gridExtra)
+```
+
+The meta-analysis are organised as follow:
+
+1) Cardiovascular function
+2) Glucose metabolism
+3) Lipid metabolism
+4) Adiposity
+5) Inflammation
+
+I wrote this script to calculate power for a random-effects meta-analysis based on https://journals.sagepub.com/doi/abs/10.3102/1076998609346961 
+
+######### Cardiovascular functions #########
+
+***Blood pressure***
+Combinations of the SBP and DBP estimates from cohort studies
+```{r}
+library(readxl)
+datasbp <- read_excel("Documents/PhD Project/Literature review/systematic review 1 inflammation/databp_cohort_parentalSEP.xlsx")
+View(databp_cohort_parentalSEP)
+View(databp_cross_parentalSEP)
+```
+
+
+```{r}
+# meta-analysis with continuout outcome
+# comb.fixed/comb.random: indicator whether a fix/random effect mata-analysis to be conducted.
+# sm: Three different types of summary measures to choose,standardized mean difference (SMD),mean difference (MD), ratio of means (ROM)
+
+#cohort studies and parental SEP (n=13)
+res.bp.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = databp_cohort_parentalSEP, sm = "SMD")
+res.bp.cohort.parentalSEP
+
+#cross-sectional studies and parental SEP (n=7)
+res.bp.cross.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = databp_cross_parentalSEP, sm = "SMD")
+res.bp.cross.parentalSEP
+```
+
+#Random Forest is an ensemble of decision trees algorithms that can be used for classification and regression predictive modeling.
+```{r}
+#Random forest regression to create an uncorrelated forest of decision trees.
+#cohort studies blood pressure and parental SEP
+forest(res.bp.cohort.parentalSEP, comb.fixed = F)
+
+#cross-sectional studies and parental SEP
+forest(res.bp.cross.parentalSEP, comb.fixed = F)
+```
+#Power analysis
+#Funnel plots are a visual tool for investigating publication and other bias in meta-analysis. They are simple scatterplots of the treatment effects estimatedfrom individual studies (horizontal axis) against a measure of study size (vertical axis).
+```{r}
+#Funnel Plot to check or Test for funnel plot asymmetry, based on rank correlation or linear regression method (Metabias).
+funnel(res.bp.cohort.parentalSEP)
+funnel(res.bp.cross.parentalSEP)
+```
+
+Use Egger’s test to check publication bias, can take string ‘Egger’ or ‘linreg’.
+```{r}
+#We have sufficient number of studies to test for small study effects. 
+metabias(res.bp.cohort.parentalSEP, method.bias = 'linreg', k.min = 13, plotit = T)
+metabias(res.bp.cross.parentalSEP, method.bias = 'linreg', k.min = 7, plotit = T) 
+```
+
+#Investigation of heterogeneity: as we get low p value of Q2 and high I2 we conducted a meta-regression.
+```{r}
+mu8 <- update(res.bp.cohort.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+mu9 <- update(res.bp.cross.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+mu8
+mu9
+
+metareg(mu8)
+metareg(mu9)
+#Note: here, contrasts can be applied only to factors with 2 or more levels
+# As argument 'tau.common' was used to create mu8
+
+# Generate bubble plot
+bubble(metareg(mu8))
+#bubble(metareg(mu9)) #1 study with NAs omitted from model fitting then dropped from the model.
+```
+
+
+
+########### GLUCOSE METABOLISM #############
+
+HbA1c, fasting flucose and blood glucose from cohorts studies.
+There were not sufficient cross-sectional studies to perform random forest models for these biomarkers.
+
+Combinations of the SBP and DBP estimates from cohort studies
+```{r}
+library(readxl)
+datasbp <- read_excel("Documents/PhD Project/Literature review/systematic review 1 inflammation/dataglucose_cohort_parentalSEP.xlsx")
+View(ddataglucose_cohort_parentalSEP)
+```
+
+
+```{r}
+# meta-analysis with continuous outcome
+# comb.fixed/comb.random: indicator whether a fix/random effect mata-analysis to be conducted.
+# sm: Three different types of summary measures to choose,standardized mean difference (SMD),mean difference (MD), ratio of means (ROM)
+
+#cohort studies and parental SEP (n=5)
+res.glucose.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = dataglucose_cohort_parentalSEP, sm = "SMD")
+res.glucose.cohort.parentalSEP
+```
+
+
+```{r}
+#cohort studies blood pressure and parental SEP
+forest(res.glucose.cohort.parentalSEP, comb.fixed = F)
+```
+```{r}
+#Funnel Plot to check or Test for funnel plot asymmetry, based on rank correlation or linear regression method (Metabias).
+funnel(res.glucose.cohort.parentalSEP)
+
+#Use Egger’s test to check publication bias, can take string ‘Egger’ or ‘linreg’.
+metabias(res.glucose.cohort.parentalSEP, method.bias = 'linreg', k.min = 5, plotit = T)
+
+#Investigation of heterogeneity: as we get low p value of Q2 and high I2 we conducted a meta-regression.
+mu7 <- update(res.glucose.cohort.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+metareg(mu7)
+
+mu7
+
+# Generate bubble plot
+bubble(metareg(mu7))
+```
+
+#######LIPID METABOLISM###########
+
+****Total cholesterol, triglyceride and LDL****
+HDL had small number of studies to generate random forest.
+```{r}
+library(readxl)
+datatchol <- read_excel("Documents/PhD Project/Literature review/systematic review 1 inflammation/datalipid_cohort_parentalSEP.xlsx")
+View(datatlipids_cohort_parentalSEP)
+```
+
+```{r}
+# meta-analysis with continuous outcomes (n=13)
+# comb.fixed/comb.random: indicator whether a fix/random effect meta-analysis to be conducted.
+# Type of choose summary measure: standardized mean difference (SMD).
+res.lipids.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = datatlipids_cohort_parentalSEP, sm = "SMD")
+res.lipids.parentalSEP
+
+#Random forest regression to create an uncorrelated forest of decision trees algorithms that can be used for classification and regression predictive modeling.
+forest(res.lipids.parentalSEP, comb.fixed = F)
+
+#Funnel Plot to check or Test for funnel plot asymmetry, based on rank correlation or linear regression method (Metabias).
+funnel(res.lipids.parentalSEP)
+
+#Use Egger’s test to check publication bias, can take string ‘Egger’ or ‘linreg’.
+metabias(res.lipids.parentalSEP, method.bias = 'linreg', k.min = 13, plotit = T)
+
+#Investigation of heterogeneity: as we get low p value of Q2 and high I2 we conducted a meta-regression.
+mu4 <- update(res.lipids.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+metareg(mu4)
+
+mu4
+
+# Generate bubble plot
+bubble(metareg(mu4))
+```
+```
+
+
+############ADIPOSITY####################
+
+*****BMI and WC****
+
+```{r}
+#Upload data cohort studies
+library(readxl)
+databmi <- read_excel("Documents/PhD Project/Literature review/systematic review 1 inflammation/Meta-analysis inflammation & parental SEP/Tables/dataadiposity_cohort_parentalSEP.xlsx")
+View(dataadiposity_cohort_parentalSEP)
+```
+
+
+```{r}
+# meta-analysis with continuous outcome (n=12)
+# comb.fixed/comb.random: indicator whether a fix/random effect meta-analysis to be conducted.
+# Type of choose summary measure: standardized mean difference (SMD).
+res.adiposity.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed, n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = dataadiposity_cohort_parentalSEP, sm = "SMD")
+res.adiposity.cohort.parentalSEP
+
+#Random forest regression to create an uncorrelated forest of decision trees algorithms that can be used for classification and regression predictive modeling.
+forest(res.adiposity.cohort.parentalSEP, comb.fixed = F)
+
+#Funnel Plot to check or Test for funnel plot asymmetry, based on rank correlation or linear regression method (Metabias).
+funnel(res.adiposity.cohort.parentalSEP)
+
+#Use Egger’s test to check publication bias, can take string ‘Egger’ or ‘linreg’.
+metabias(res.adiposity.cohort.parentalSEP, method.bias = 'linreg', k.min = 12, plotit = T) 
+
+#Investigation of heterogeneity: as we get low p value of Q2 and high I2 we conducted a meta-regression.
+mu6 <- update(res.adiposity.cohort.parentalSEP, byvar = Sex, tau.common = TRUE, comb.fixed = FALSE)
+mu6
+
+# Generate bubble plot
+metareg(mu6)
+```
+
+
+##########################INFLAMMATION############################
+
+***CRP and IL-6***
+
+#Upload table with studies CRP biomarkers (cohort studies)
+```{r}
+setwd("~/Documents/PhD Project/Literature review/systematic review 1 inflammation")
+
+library(readxl)
+datacrp_cohorts_parentalSEP <- read_excel("Documents/PhD Project/Literature review/systematic review 1 inflammation/datacrp_cohorts_parentalSEP.xlsx")
+View(datacrp_cohorts_parentalSEP)
+
+#Check values in the table cohort studies Il-6 & Allostatic Load and parental SEP
+View(datainflamm_cohort_parentalSEP)
+head(datainflamm_cohort_parentalSEP)
+
+#Check values in the table CRP, IL-6 and AL cross sectional studies and parental SEP
+View(datainflamm_cross_parentalSEP)
+head(datainflamm_cross_parentalSEP)
+```
+
+
+```{r}
+#cohort studies CRP and parental SEP (n=11 studies)
+# Meta-analysis with continuout outcome
+# comb.fixed/comb.random: indicator whether a fix/random effect mata-analysis to be conducted.
+# sm: Three different types of summary measures to choose,standardized mean difference (SMD),mean difference (MD), ratio of means (ROM)
+
+res.crp.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = datacrp_cohorts_parentalSEP, sm = "SMD")
+res.crp.cohort.parentalSEP
+
+#IL-6 - cohort studies and parental education (n=5 studies)
+res.inflamm.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = datainflamm_cohort_parentalSEP, sm = "SMD")
+res.inflamm.cohort.parentalSEP
+
+
+#CRP, IL-6 and Allostatic Load - cross sectional studies and parental education (5 studies)
+res.inflamm.cross.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = datainflamm_cross_parentalSEP, sm = "SMD")
+res.inflamm.cross.parentalSEP
+```
+
+
+#Random forest regression to create an uncorrelated forest of decision trees.
+#Random Forest is an ensemble of decision trees algorithms that can be used for classification and regression predictive modeling.
+```{r}
+#random forest cohort studies and parental SEP
+forest(res.crp.cohort.parentalSEP, comb.fixed = F)
+
+#random forest IL-6 and AL cohort studies and parental SEP
+forest(res.inflamm.cohort.parentalSEP, comb.fixed = F)
+
+#random forest CRP, IL-6 and AL cross sectional studies and parental SEP
+forest(res.inflamm.cross.parentalSEP, comb.fixed = F)
+```
+  
+
+```{r}
+#Funnel Plot using meta package
+funnel(res.crp.cohort.parentalSEP)
+funnel(res.inflamm.cohort.parentalSEP)
+funnel(res.inflamm.cross.parentalSEP)
+
+#Funnel Plot using metafor package (as a sensitivity analysis)
+metafor::funnel(res.crp.cohort.parentalSEP)
+metafor::funnel(res.inflamm.cohort.parentalSEP)
+metafor::funnel(res.inflamm.cross.parentalSEP)
+```
+
+
+#Use Egger’s test to check publication bias, can take string ‘Egger’ or ‘linreg’.
+#Egger’s test is a linear regression of the intervention effect estimates on their standard errors weighted by their inverse variance
+```{r}
+metabias(res.crp.cohort.parentalSEP, method.bias = 'linreg', k.min = 11, plotit = T)
+metabias(res.inflamm.cohort.parentalSEP, method.bias = 'linreg', k.min = 5, plotit = T)
+metabias(res.inflamm.cross.parentalSEP, method.bias = 'linreg', k.min = 5, plotit = T)
+```
+
+
+#Investigation of heterogeneity: as we get low p value of Q2 and high I2 we conducted a meta-regression.
+```{r}
+mu1 <- update(res.crp.cohort.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+mu2 <- update(res.inflamm.cohort.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+mu3 <- update(res.inflamm.cross.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+
+mu1
+mu2
+mu3
+
+# Generate bubble plot
+bubble(metareg(mu1))
+bubble(metareg(mu2))
+#bubble(metareg(mu3)) #redundant predictors dropped from the model. 
+```
+
+
+
+#AL - cohort studies and parental education (n=5 studies)
+
+```{r}
+#Allostatic Load - cohort studies and parental education (n=9 studies)
+res.al.cohort.parentalSEP =  metacont(n_exposed, mean_exposed, sd_exposed,
+n_non_exposed, mean_non_exposed, sd_non_exposed,
+comb.fixed = T, comb.random = T, studlab = Study,
+data = dataal_cohort_parentalSEP, sm = "SMD")
+res.al.cohort.parentalSEP
+
+#random forest IL-6 and AL cohort studies and parental SEP
+forest(res.al.cohort.parentalSEP, comb.fixed = F)
+
+metabias(res.al.cohort.parentalSEP, method.bias = 'linreg', k.min = 4, plotit = T)
+mu10 <- update(res.al.cohort.parentalSEP, byvar = Age, tau.common = TRUE, comb.fixed = FALSE)
+bubble(metareg(mu10))
+
+```
+
+########END###########
+
+This script are part of appendix of individual meta-analysis (specific biomarkers). Please do not run as a part of the meta-analysis and use it for reaserch or teaching purposes.
+
+#Power analysis (this code was used to extract results to the manuscript)
+
+```{r}
+
+# Download packages
+
+install.packages("devtools")
+install.packages("metameta")
+
+library(devtools)
+devtools::install_github("dsquintana/metameta")
+library(metameta)
+
+#CRP cohort studies and occupation
+
+#effects sizes (means) and standard deviation
+
+View (datacrp_cohort_occupation_pa)        # View the exmaple of dataset
+
+power_crp_cohort_occup <- mapower_se(dat=datacrp_cohort_occupation_pa,  # The dataset
+                                     observed_es = 0.07,                # The observed summary effect size 
+                                     name = "crp_cohort_occupation_ma") # The name of the meta-analysis
+
+crp_cohort_occupation_table <- power_crp_cohort_occup$dat  # Power for a range of effects
+crp_cohort_occupation_table
+write.csv (crp_cohort_occupation_table, "crp_cohort_occupation_table.csv") # Save as csv
+
+crp_cohort_occupation_power_med_table <- power_crp_cohort_occup$power_median_dat     # Median power
+crp_cohort_occupation_power_med_table
+write.csv (crp_cohort_occupation_power_med_table, "crp_cohort_occupation_power_med_table.csv") # Save as csv
+
+firepower (list(power_crp_cohort_occup$power_median_dat))  # Firepower plot
+
+#CRP cohort studies and education
+
+View (datacrp_cohort_education_pa)        # View the exmaple of dataset
+
+power_crp_cohort_education <- mapower_se(dat=datacrp_cohort_education_pa,  # The dataset
+                                     observed_es = 0.11,                # The observed summary effect size 
+                                     name = "crp_cohort_education_ma") # The name of the meta-analysis
+
+crp_cohort_education_table <- power_crp_cohort_education$dat  # Power for a range of effects
+crp_cohort_education_table
+write.csv (crp_cohort_education_table, "crp_cohort_education_table.csv") # Save as csv
+
+crp_cohort_education_power_med_table <- power_crp_cohort_education$power_median_dat     # Median power
+crp_cohort_education_power_med_table
+write.csv (crp_cohort_education_power_med_table, "crp_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_crp_cohort_education$power_median_dat))  # Firepower plot
+
+
+#IL-6 cohort studies and education
+View (datail6_cohort_education_pa)        # View the exmaple of dataset
+
+power_il6_cohort_education <- mapower_se(dat=datail6_cohort_education_pa,  # The dataset
+                                     observed_es = 0.07,                # The observed summary effect size 
+                                     name = "il6_cohort_education_ma") # The name of the meta-analysis
+
+il6_cohort_education_table <- power_il6_cohort_education$dat  # Power for a range of effects
+il6_cohort_education_table
+write.csv (il6_cohort_education_table, "il6_cohort_education_table.csv") # Save as csv
+
+il6_cohort_education_power_med_table <- power_il6_cohort_education$power_median_dat     # Median power
+il6_cohort_education_power_med_table
+write.csv (il6_cohort_education_power_med_table, "il6_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_il6_cohort_education$power_median_dat))  # Firepower plot
+
+
+#SBP cohort studies and education
+View (datasbp_cohort_education_pa)        # View the exmaple of dataset
+
+power_sbp_cohort_education <- mapower_se(dat=datasbp_cohort_education_pa,  # The dataset
+                                     observed_es = 0.25,                # The observed summary effect size 
+                                     name = "sbp_cohort_education_ma")  # The name of the meta-analysis
+
+sbp_cohort_education_table <- power_sbp_cohort_education$dat  # Power for a range of effects
+sbp_cohort_education_table
+write.csv (sbp_cohort_education_table, "sbp_cohort_education_table.csv") # Save as csv
+
+sbp_cohort_education_power_med_table <- power_sbp_cohort_education$power_median_dat     # Median power
+sbp_cohort_education_power_med_table
+write.csv (dbp_cohort_education_power_med_table, "sbp_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_sbp_cohort_education$power_median_dat))  # Firepower plot
+
+
+#Total cholesterol cohort studies and education
+View (datatchol_cohort_education_pa)        # View the exmaple of dataset
+
+power_tchol_cohort_education <- mapower_se(dat=datatchol_cohort_education_pa,  # The dataset
+                                     observed_es = 0.19,                # The observed summary effect size 
+                                     name = "tchol_cohort_education_ma")  # The name of the meta-analysis
+
+tchol_cohort_education_table <- power_tchol_cohort_education$dat  # Power for a range of effects
+tchol_cohort_education_table
+write.csv (tchol_cohort_education_table, "tchol_cohort_education_table.csv") # Save as csv
+
+tchol_cohort_education_power_med_table <- power_tchol_cohort_education$power_median_dat     # Median power
+tchol_cohort_education_power_med_table
+write.csv (tchol_cohort_education_power_med_table, "tchol_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_tchol_cohort_education$power_median_dat))  # Firepower plot
+
+
+
+#LDL cohort studies and education
+View (dataldl_cohort_education_pa)        # View the example of dataset
+
+power_ldl_cohort_education <- mapower_se(dat=dataldl_cohort_education_pa,  # The dataset
+                                     observed_es = 0.17,                # The observed summary effect size 
+                                     name = "ldl_cohort_education_ma")  # The name of the meta-analysis
+
+ldl_cohort_education_table <- power_ldl_cohort_education$dat  # Power for a range of effects
+ldl_cohort_education_table
+write.csv (ldl_cohort_education_table, "ldl_cohort_education_table.csv") # Save as csv
+
+ldl_cohort_education_power_med_table <- power_ldl_cohort_education$power_median_dat     # Median power
+ldl_cohort_education_power_med_table
+write.csv (hdl_cohort_education_power_med_table, "ldl_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_ldl_cohort_education$power_median_dat))  # Firepower plot
+
+
+#BMI cohort studies and education
+View (databmi_cohort_education_pa)
+
+power_bmi_cohort_education <- mapower_se(dat=databmi_cohort_education_pa,  # The dataset
+                                     observed_es = 0.37,                # The observed summary effect size 
+                                     name = "bmi_cohort_education_ma")  # The name of the meta-analysis
+
+bmi_cohort_education_table <- power_bmi_cohort_education$dat  # Power for a range of effects
+bmi_cohort_education_table
+write.csv (bmi_cohort_education_table, "bmi_cohort_education_table.csv") # Save as csv
+
+bmi_cohort_education_power_med_table <- power_bmi_cohort_education$power_median_dat     # Median power
+bmi_cohort_education_power_med_table
+write.csv (bmi_cohort_education_power_med_table, "bmi_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_bmi_cohort_education$power_median_dat))  # Firepower plot
+
+
+
+#Allostatic load cohort studies and education
+View (dataal_cohort_education_pa)
+
+power_al_cohort_education <- mapower_se(dat=dataal_cohort_education_pa,  # The dataset
+                                     observed_es = 0.45,                # The observed summary effect size 
+                                     name = "al_cohort_education_ma")  # The name of the meta-analysis
+
+al_cohort_education_table <- power_al_cohort_education$dat  # Power for a range of effects
+al_cohort_education_table
+write.csv (al_cohort_education_table, "al_cohort_education_table.csv") # Save as csv
+
+al_cohort_education_power_med_table <- power_al_cohort_education$power_median_dat     # Median power
+al_cohort_education_power_med_table
+write.csv (al_cohort_education_power_med_table, "al_cohort_education_power_med_table.csv") # Save as csv
+
+firepower (list(power_al_cohort_education$power_median_dat))  # Firepower plot
+
+# Combining multiples meta-analysis
+list_power <- list(al_cohort_education_power_med_table, crp_cohort_education_power_med_table, il6_cohort_education_power_med_table, tchol_cohort_education_power_med_table, crp_cohort_occupation_power_med_table, dbp_cohort_education_power_med_table, sbp_cohort_education_power_med_table, hdl_cohort_education_power_med_table, ldl_cohort_education_power_med_table, tri_cohort_education_power_med_table, bmi_cohort_education_power_med_table, wc_cohort_education_power_med_table)
+firepower (list_power)
+
+
+#ALL studies 
+View (dataparental_sep_pa)
+
+power_parental_sep <- mapower_se(dat=dataparental_sep_pa,  # The dataset
+                                     observed_es = 0.16,                # The observed summary effect size 
+                                     name = "parental_sep_ma")  # The name of the meta-analysis
+
+parental_sep_pa_table <- power_parental_sep_pa$dat  # Power for a range of effects
+parental_sep_pa_table
+write.csv (parental_sep_pa_table, "parental_sep_pa_table.csv") # Save as csv
+
+parental_sep_power_med_table <- power_parental_sep_pa$power_median_dat     # Median power
+parental_sep_power_med_table
+write.csv (parental_sep_power_med_table, "parental_sep_power_med_table.csv") # Save as csv
+
+firepower (list(power_parental_sep$power_median_dat))  # Firepower plot
+
+
+```
+
+############################## END HERE ###########################
+
+
+
+
+
+
